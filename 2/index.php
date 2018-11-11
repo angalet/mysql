@@ -6,18 +6,23 @@
     <title>Страница входа</title>
 </head>
 <body>
+<?php
+session_start();
+if (!$_SESSION['NAME']) {
+    echo $_SESSION['NAME']?>
     <form method="post">
         <p>Авторизоваться <input type="submit" name="auth" value="OK" /></p>
         <p><input type="text" name="login" value="" /> Логин</p>
         <p><input type="text" name="pass" value="" /> Пароль</p>
         <p>Зарегистрироваться <input type="submit" name="reg" value="OK" /></p>
     </form>
+<?php }?>
 </body>
 </html>
 <?php
 $pdo = new PDO("mysql:host=localhost;dbname=netology01; charset=utf8","admin","1qa2ws3ed");
 //$user_from_base = "SELECT id,login,password FROM user WHERE login= ?";
-session_start();
+
 if (isset($_POST["auth"])){
 if (!isset($_SESSION['NAME']) and isset($_SERVER['PHP_AUTH_USER'])) {
     echo $_SESSION['NAME']." на авторизацию<br>";
@@ -72,7 +77,7 @@ if ($_SESSION['NAME']){
     echo $_SESSION['NAME']." Вы авторизовались<br>";
     ?>
     <form method="post">
-        <p><input type="text" name="task" value="" /> Дело</p>
+        <p><input type="text" name="task" value="" /> Введите название дела и нажмите добавить</p>
         <p>Добавить дело <input type="submit" name="addtask" value="OK" /></p>
     </form>
     <?php
@@ -93,21 +98,31 @@ if ($_SESSION['NAME']){
     <th>удалить</th>
     <th>Дело</th>
    	<th>Когда</th>
+    <th>выполнено/невыполнено</th>
    </tr>
    <?php
     $data = [
         'user_id' => $_SESSION['user_id']
     ];
-    $sql = "SELECT id, description, date_added FROM task WHERE user_id=user_id ORDER BY date_added ";
+    $sql = "SELECT id, description, date_added, is_done FROM task WHERE user_id=user_id ORDER BY date_added ";
     $stmt= $pdo->prepare($sql);
     $stmt->execute($data); //$_SESSION['user_id']
     $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
     //print_r($tasks);
     foreach ($tasks as $row){
+        if ($row['is_done'] == 0) {
+            $task_state = "не выполнено";
+            $task_state_make = 1;
+        }
+        else {
+            $task_state = "выполнено";
+            $task_state_make = 0;
+        }
         echo "<tr>
             <td><input type='checkbox' name='gelete_row[]' value=".$row['id']."> ".$row['id']."</td>
             <td>".$row['description']."</td>
             <td>".date("Y M d",strtotime($row['date_added']))."</td>
+            <td><a href='/NET/mysql/2/?id=".$row['id']."&done=".$task_state_make."'>".$task_state."</a></td>
             </tr>";
     }
     ?>
@@ -121,14 +136,30 @@ if ($_SESSION['NAME']){
         $id_task = implode(',',$_POST['gelete_row']);
         echo $id_task;
         $data = [
-            'id_task' => $id_task
+            //'id_task' => $id_task,
+            'user_id' => $_SESSION['user_id']
         ];
-        $sql = "DELETE FROM task WHERE id IN (".$id_task.")";
+        $sql = "DELETE FROM task WHERE user_id=:user_id AND id IN (".$id_task.")";
+        //DELETE FROM task WHERE user_id= ... AND id=... LIMIT 1 не стал так телать, хотелось удалять сразу
+        //несколько задач
         //$sql = "DELETE FROM task WHERE id IN (:$id_task)";
-        echo $sql."<br>";
         $stmt= $pdo->prepare($sql);
-        $stmt->execute(); //тут почему то не работает через $data
-        echo $sql;
+        $stmt->execute($data); //тут почему то не работает через $data это  выражение id IN (:$id_task)
+        header("Location: /NET/mysql/2/");
+    }
+    if (isset($_GET['done'])){
+        echo $_GET['done']."<br>";
+        //UPDATE `task` SET `is_done` = '1' WHERE `task`.`id` = 23;
+        //UPDATE task SET is_done=... WHERE user_id= ... AND id=... LIMIT 1
+        $data = [
+            'id' => $_GET['id'],
+            'is_done' => $_GET['done'],
+            'user_id' => $_SESSION['user_id']
+        ];
+        $sql = "UPDATE task SET is_done=:is_done WHERE user_id=:user_id AND id=:id LIMIT 1";
+        $stmt= $pdo->prepare($sql);
+        $stmt->execute($data);
+        header("Location: /NET/mysql/2/");
 
     }
 
