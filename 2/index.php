@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,7 +10,7 @@ session_start();
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-if (!$_SESSION['NAME']) {
+if (!isset($_SESSION['NAME'])) {
     ?>
     <form method="post">
         <p>Авторизоваться <input type="radio" checked name="auth_reg" value="auth" />
@@ -20,20 +19,20 @@ if (!$_SESSION['NAME']) {
         <p><input type="text" name="pass" value="" /> Пароль</p>
         <p><input type="submit" name="reg" value="OK" /></p>
     </form>
-<?php }
-if ($_SESSION['NAME']) {
+<?php 
+}
+if (isset($_SESSION['NAME'])) {
     echo $_SESSION['NAME']?>
     <form method="post">
         <p><input type="submit" name="logout" value="Выйти" /></p>
     </form>
 <?php }?>
 
-</body>
-</html>
+
 <?php
 $pdo = new PDO("mysql:host=localhost;dbname=netology01; charset=utf8","admin","1qa2ws3ed");
 
-function checkUserByLogin($user_login)
+/*function checkUserByLogin($user_login)
 {
     $data = [
         'login' => $user_login
@@ -43,11 +42,11 @@ function checkUserByLogin($user_login)
     $stmt->execute($data);
     $login = $stmt->fetch();
     return $login;
-}
+}*/
 
 if (isset($_POST['auth_reg']) and $_POST['auth_reg']=='auth'){
 if (!isset($_SESSION['NAME']) and $_POST['auth_reg']=='auth') {
-    echo $_SESSION['NAME']." на авторизацию<br>";
+    //echo $_SESSION['NAME']." на авторизацию<br>";
     $user_from_base = "SELECT id,login,password FROM user WHERE login= ?";
     $stmt= $pdo->prepare($user_from_base);
     $stmt->execute([$_POST['login']]);
@@ -60,7 +59,7 @@ if (!isset($_SESSION['NAME']) and $_POST['auth_reg']=='auth') {
         setcookie("user_name", $_POST['login']);
         setcookie("user_auth", "YES");
         echo "вы авторизовались ".$_SESSION['NAME'];
-        header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/");
+        echo "<script>document.location.href='http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/';</script>";
     }
 } 
 if (!isset($_SESSION['NAME'])) {
@@ -99,7 +98,7 @@ if (isset($_POST['auth_reg']) and $_POST['auth_reg']=='reg'){
     
     }
 }
-if ($_SESSION['NAME']){
+if (isset($_SESSION['NAME'])){
     echo " Вы авторизовались, <b>".$_SESSION['NAME']."</b>!<br>";
     ?>
     <form method="post">
@@ -121,14 +120,14 @@ if ($_SESSION['NAME']){
     ?>
     <form method='post'>
     <table width="80%" border="1" >
-<tr>
-    <th width='30'>удалить</th>
-    <th>Дело</th>
-   	<th>Когда</th>
-    <th>выполнено/<br>невыполнено</th>
-    <th>Исполнитель</th>
-   </tr>
-   <?php
+    <tr>
+        <th width='30'>удалить</th>
+        <th>Дело</th>
+   	    <th>Когда</th>
+        <th>выполнено/<br>невыполнено</th>
+        <th>Исполнитель</th>
+    </tr>
+<?php
     $data = [
         'user_id' => $_SESSION['user_id']
     ];
@@ -148,23 +147,23 @@ if ($_SESSION['NAME']){
         else {
             $task_state = "выполнено";
             $task_state_make = 0;
-        }
-        ?><tr>
-            <td><input type='checkbox' name='delete_row[]' value="<?php echo $row['id'] ?>" /></td>
-            <td><?php echo  $row['id']." ".$row['description'] ?></td>
-            <td><?php echo date("Y M d",strtotime($row['date_added'])) ?></td>
-            <td><a href='/NET/mysql/2/?id=<?php echo $row['id'] ?>&done=<?php echo $task_state_make ?>'><?php echo $task_state ?></a></td>
-            <td><input name='task_id[]' type='hidden' value="<?php echo $row['id'] ?>"> 
+}
+?>
+        <tr>
+            <td><input type='checkbox' name='delete_row[]' value="<?php echo $row['id']?>" /></td>
+            <td><?php echo  $row['id']." ".$row['description']?></td>
+            <td><?php echo date("Y M d",strtotime($row['date_added']))?></td>
+            <td><a href='/NET/mysql/2/?id=<?php echo $row['id']?>&done=<?php echo $task_state_make ?>'><?php echo $task_state?></a></td>
+            <td>
             <select name='assigned_user_id[<?php echo $row['id'] ?>]' >
             <?php foreach ($assignedUserList as $assignedUser){ ?>
-              <option <?php if ($row['assigned_user_id'] == $assignedUser['id']){?>
-                selected <?php } ?> value=<?php echo $assignedUser['id'] ?> >
-                <?php echo $assignedUser['login'] ?>
-              </option>
-              <?php } ?>
+              <option <?php if ($row['assigned_user_id'] == $assignedUser['id']){
+                  ?>selected<?php }?> 
+                  value="<?php echo $assignedUser['id']?>" ><?php echo $assignedUser['login']?></option>
+              <?php }?>
             </select></td>
-            </tr>
-            <?php
+        </tr>
+<?php
     }
     $data = [
         'user_id' => $_SESSION['user_id']
@@ -185,13 +184,14 @@ if ($_SESSION['NAME']){
             $task_state = "выполнено";
             $task_state_make = 0;
         }
-    ?><tr>
+    ?>
+        <tr>
             <td><input type='checkbox' disabled   /></td>
             <td><?php echo $assigned_task['id']." ".$assigned_task['description'] ?></td>
             <td><?php echo date("Y M d",strtotime($assigned_task['date_added'])) ?></td>
             <td><a href='/NET/mysql/2/?id=<?php echo $assigned_task['id'] ?>&done=<?php echo $task_state_make ?>&assigned_=1'><?php echo $task_state ?></a></td>
             <td><?php echo $assigned_task['login']."->".$assigned_task['name1'] ?></td>
-            </tr>
+        </tr>
             <?php
     }
     $data = [
@@ -203,13 +203,13 @@ if ($_SESSION['NAME']){
     $user_count  = $stmt->fetch();
     ?>
     <tr>    
-            <td></td>
-            <td>Количество задач</td>
-            <td><?php echo $user_count[0] ?></td>
+        <td></td>
+        <td>Количество задач</td>
+        <td><?php echo $user_count[0] ?></td>
     </tr>
     </table>
-    <p><input type="submit" name="delete_row_submit" value="OK" > удалить выбранное</p>
-    <p><input type="submit" name="deleg_to_user" value="OK" > делегировать выбранное</p>
+        <p><input type="submit" name="delete_row_submit" value="OK" > удалить выбранное</p>
+        <p><input type="submit" name="deleg_to_user" value="OK" > делегировать выбранное</p>
     </form>
     <?php
     if (isset($_POST['delete_row_submit']) and isset($_POST['delete_row']) ){
@@ -225,7 +225,7 @@ if ($_SESSION['NAME']){
         //$sql = "DELETE FROM task WHERE id IN (:$id_task)";
         $stmt= $pdo->prepare($sql);
         $stmt->execute($data); //тут почему то не работает через $data это  выражение id IN (:$id_task)
-        header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/");
+        echo "<script>document.location.href='http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/';</script>";
     }
     if (isset($_POST['deleg_to_user'])){  
         $assigned_users_id_from_form =$_POST['assigned_user_id'];
@@ -240,11 +240,15 @@ if ($_SESSION['NAME']){
             $stmt->execute($data);
             
         }
-        header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/");
+        echo "<script>document.location.href='http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/';</script>";
+        //header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/"); пытался так обновлять страницы, но нотайсы
     }
     if (isset($_GET['done'])){
+        $user_id_or_assig = 'user_id';
+        if (isset($_GET['assigned_'])){
         if ($_GET['assigned_']==1) $user_id_or_assig = 'assigned_user_id';
         else $user_id_or_assig = 'user_id';
+        }
         $data = [
             'id' => $_GET['id'],
             'is_done' => $_GET['done'],
@@ -253,12 +257,14 @@ if ($_SESSION['NAME']){
         $sql = "UPDATE task SET is_done=:is_done WHERE ".$user_id_or_assig."=:".$user_id_or_assig." AND id=:id LIMIT 1";
         $stmt= $pdo->prepare($sql);
         $stmt->execute($data);
-        header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/");
+        echo "<script>document.location.href='http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/';</script>";
     }
     if (isset($_POST['logout'])){ 
         $_SESSION['user_id'] = NULL;  
         $_SESSION['NAME'] = NULL;
-        header("Location: http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/");
+        echo "<script>document.location.href='http://".$_SERVER['HTTP_HOST']."/NET/mysql/2/';</script>";
     }
 }
 ?>
+</body>
+</html>
